@@ -53,7 +53,8 @@
     const tableBody = document.getElementById('tableBody');
 
     function downloadBook(md5) {
-      fetch(`/download?md5=${md5}`);
+      window.open(`/download?md5=${md5}`);
+      // fetch(`/download?md5=${md5}`);
     }
 
     console.log(button, searchBox);

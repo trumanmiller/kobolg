@@ -5,7 +5,7 @@ const app = require('express')();
 const path = require('path');
 const { spawn, execFile } = require('child_process');
 
-const { parseLibgenSearch, downloadEPUB, removeEPUB } = require('./helpers');
+const { parseLibgenSearch, downloadEPUB, deleteEPUB } = require('./helpers');
 
 const PORT = 3001;
 
@@ -43,13 +43,15 @@ app.get('/download', async (req, res, err) => {
       if (error) {
         throw error;
       } else {
-        res.setHeader('Content-Disposition', 'attachment; filename=filename.epub"');
-        res.setHeader('Content-Type', 'application/epub');
+        // res.setHeader('Content-Disposition', 'attachment; filename=filename.epub"');
+        // res.setHeader('Content-Type', 'application/epub');
         res.download(path.join(__dirname, `./epub/${md5}.kepub.epub`));
+        deleteEPUB(md5);
       }
     });
   } catch (err) {
     console.error(`Error: ${err.message}`);
+    deleteEPUB(md5);
     res.status(500).send('');
   }
 });
@@ -62,7 +64,7 @@ app.use((err, req, res, next) => {
   res.status(500).send('Internal Server Error');
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log('listening on port: ' + PORT);
 });
 
