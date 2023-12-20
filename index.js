@@ -3,7 +3,7 @@ const fs = require('fs');
 const https = require('https');
 const app = require('express')();
 const path = require('path');
-const { spawn } = require('child_process');
+const { spawn, execFile } = require('child_process');
 
 const { parseLibgenSearch, downloadEPUB, removeEPUB } = require('./helpers');
 
@@ -32,13 +32,25 @@ app.get('/search', (req, res, next) => {
 
 app.get('/download', async (req, res, err) => {
   const md5 = req.query.md5;
-  console.log('Download:', md5);
-  spawn('./kepubify', ['-i','-o', `./epubs`, `./epubs/${md5}.epub`]);
+  // console.log('Download:', md5);
   try {
     await downloadEPUB(md5);
-    
+    // res.setHeader('Content-disposition', `attachment; filename=${md5}.kepub.epub`);
+    res.setHeader('Content-Disposition', 'attachment; filename=filename.epub"');
+    res.setHeader('Content-Type', 'application/epub');
+
+    execFile('./kepubify', ['-i', '-o', `./epub`, `./epub/${md5}.epub`], (error, stdout, stderr) => {
+      if (error) {
+        throw error;
+      } else {
+        res.setHeader('Content-Disposition', 'attachment; filename=filename.epub"');
+        res.setHeader('Content-Type', 'application/epub');
+        res.download(path.join(__dirname, `./epub/${md5}.kepub.epub`));
+      }
+    });
   } catch (err) {
     console.error(`Error: ${err.message}`);
+    res.status(500).send('');
   }
 });
 
@@ -53,42 +65,6 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log('listening on port: ' + PORT);
 });
-
-function parseHTML(html) {
-  const $ = cheerio.load(html);
-  const result = [];
-
-  $('table.catalog tbody tr').each((index, element) => {
-    const authors = [];
-    $(element)
-      .find('ul.catalog_authors li a')
-      .each((i, authorElement) => {
-        authors.push($(authorElement).text());
-      });
-
-    const series = $(element).find('td:nth-child(2)').text().trim();
-    const title = $(element).find('td:nth-child(3) p a').text().trim();
-    const language = $(element).find('td:nth-child(4)').text().trim();
-    const fileSize = $(element).find('td:nth-child(5)').text().trim();
-    const mirrors = [];
-    $(element)
-      .find('td:nth-child(6) ul.record_mirrors_compact li a')
-      .each((i, mirrorElement) => {
-        mirrors.push($(mirrorElement).attr('href'));
-      });
-
-    result.push({
-      authors,
-      series,
-      title,
-      language,
-      fileSize,
-      mirrors,
-    });
-  });
-
-  return result;
-}
 
 // const parsedData = parseHTML(html);
 // console.log(parsedData);
