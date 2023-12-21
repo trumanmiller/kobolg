@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KOBOLG</title>
+  </head>
+  <body>
+    <input type="text" name="" id="searchBox" />
+    <button id="searchButton">search</button>
+    <div>
+      <table>
+        <thead>
+          <tr style="font-weight: 900">
+            <td>Authors</td>
+            <td>Series</td>
+            <td>Title</td>
+            <td>File</td>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <!-- <tr>
+            <td>${authors.join('; ')}</td>
+            <td>${series}</td>
+            <td>${title}</td>
+            <td>${fileSize}</td> 
+          </tr> -->
+        </tbody>
+      </table>
+    </div>
+  </body>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      /* justify-content: center; */
+      align-items: center;
+    }
+    input,
+    button {
+      max-width: 300px;
+      padding: 10px;
+      margin: 10px;
+    }
+    td {
+      border: 1px solid black;
+    }
+  </style>
+  <script>
+    const button = document.getElementById('searchButton');
+    const searchBox = document.getElementById('searchBox');
+    // const list = document.getElementById('list');
+    const tableBody = document.getElementById('tableBody');
+
+    function downloadBook(md5) {
+      window.open(`/download?md5=${md5}`);
+      // fetch(`/download?md5=${md5}`);
+    }
+
+    console.log(button, searchBox);
+    button.addEventListener('mouseup', () => {
+      button.innerText = 'searching...';
+      tableBody.innerHTML = '';
+      fetch(`/search?s=${searchBox.value}`)
+        .then((data) => {
+          if (data.status !== 200) console.error(data);
+
+          return data.json();
+        })
+        .then((res) => {
+          if (res.length < 1) tableBody.innerHTML = 'NO BOOKS FOUND';
+          console.log(res);
+          res.forEach(({ authors, series, title, fileSize, md5 }) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${authors.join('; ')}</td>
+              <td>${series}</td>
+              <td>${title}</td>
+              <td>${fileSize}</td>
+              <button onclick="downloadBook('${md5}')">get</button
+            `;
+            // const button = document.createElement('button');
+            // button.innerText = 'get';
+            // tr.appendChild(button);
+            tableBody.appendChild(tr);
+          });
+          button.innerText = 'search';
+        });
+      searchBox.value = '';
+    });
+  </script>
+</html>
