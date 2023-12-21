@@ -7,7 +7,7 @@ const { spawn, execFile } = require('child_process');
 
 const { parseLibgenSearch, downloadEPUB, deleteEPUB } = require('./helpers');
 
-const PORT = 3001;
+const PORT = 80;
 
 app.get('/', (req, res, err) => {
   res.sendFile(path.join(__dirname, './index.html'));
