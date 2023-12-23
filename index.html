@@ -7,7 +7,7 @@
   </head>
   <body>
     <form action="/search" method="get">
-      <input type="text" name="s" id="searchBox" />
+      <input minlength="1" type="text" name="s" id="searchBox" />
       <input type="submit" value="Search" />
     </form>
 
@@ -23,6 +23,7 @@
           </tr>
         </thead>
         <tbody id="tableBody">
+          
           <!-- <tr>
             <td>Appleton, Victor</td>
             <td></td>

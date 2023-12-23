@@ -16,15 +16,24 @@ app.get('/', (req, res, err) => {
 
 app.get('/search', async (req, res, next) => {
   const search = req.query.s;
-  const file = await fp.readFile('./index.html');
-  let html = file.toString();
-  const startingIndex = html.search('<tbody id="tableBody">') + 22;
-
+  if (typeof search !== 'string') return next({});
+  let html;
+  let startingIndex;
   try {
-    if (search.length <= 2) return res.status().send('invalid search length');
+    const file = await fp.readFile('./index.html');
+    html = file.toString();
+    startingIndex = html.search('<tbody id="tableBody">') + 22;
   } catch (err) {
-    next(err);
+    console.error('There was an issue reading template html from fs', err.message);
   }
+
+  if (search.length < 1) {
+    const modifiedHtml = html.slice(0, startingIndex) + '<div>Search to o short</div>' + html.slice(startingIndex);
+    res.contentType('text/html');
+    res.status(200).send(modifiedHtml);
+    return;
+  }
+
   console.log('Search:', search);
   fetch(`https://libgen.is/fiction/?q=${search}&criteria=&language=&format=epub`)
     .then((response) => response.arrayBuffer())
@@ -46,7 +55,14 @@ app.get('/search', async (req, res, next) => {
         </tr>
         `;
       });
-      // fs.writeFileSync('./test.html', html);
+      if (bookNodes.length < 1) {
+        const modifiedHtml =
+          html.slice(0, startingIndex) + '<div>Your search returned no results</div>' + html.slice(startingIndex);
+        res.contentType('text/html');
+        res.status(200).send(modifiedHtml);
+        return;
+      }
+
       const modifiedHtml = html.slice(0, startingIndex) + bookNodes.join('') + html.slice(startingIndex);
       res.contentType('text/html');
       res.status(200).send(modifiedHtml);
@@ -60,6 +76,7 @@ app.get('/search', async (req, res, next) => {
 app.get('/download', async (req, res, err) => {
   const start = Date.now();
   const md5 = req.query.md5;
+  if (typeof md5 !== 'string' || md5.length !== 32) return next({});
   // console.log('Download:', md5);
   try {
     await downloadEPUB(md5);
@@ -76,15 +93,15 @@ app.get('/download', async (req, res, err) => {
         res.download(path.join(__dirname, `./epub/${md5}.kepub.epub`));
         setTimeout(() => {
           deleteEPUB(md5);
-        }, 5000);
+        }, 60000);
       }
     });
   } catch (err) {
     console.error(`Error: ${err.message}`);
     deleteEPUB(md5);
-    res.status(500).send('');
+    res.status(500).send('ERROR downloading book. you can try again but there may be an issue with download servers');
   }
-  console.log(Date.now() - start);
+  console.log('Book download and processing took: ', Date.now() - start);
 });
 
 app.all((req, res, next) => {

@@ -44,7 +44,8 @@ const parseLibgenSearch = (html) => {
 };
 
 const downloadEPUB = async (md5) => {
-  console.log('Download:', md5);
+  console.log('Downloading:', md5);
+
   const url = `https://cdn3.booksdl.org/get.php?md5=${md5}`;
   const localDirectory = './epub';
   const fileName = `${md5}.epub`;
@@ -78,14 +79,23 @@ const downloadEPUB = async (md5) => {
 };
 
 const deleteEPUB = (md5) => {
-  fs.unlink(`./epub/${md5}.epub`, (err) => {
-    if (err) throw err;
-    console.log('epub removed');
-  });
-  fs.unlink(`./epub/${md5}.kepub.epub`, (err) => {
-    if (err) throw err;
-    console.log('kepub removed');
-  });
+  try {
+    fs.unlink(`./epub/${md5}.epub`, (err) => {
+      if (err) throw err;
+      console.log('epub removed');
+    });
+  } catch (err) {
+    console.error('ERROR deleting epub: ', err.message);
+  }
+  try {
+    fs.unlink(`./epub/${md5}.kepub.epub`, (err) => {
+      if (err) throw err;
+      console.log('kepub removed');
+    });
+  } catch (err) {
+    console.error('ERROR deleting kepub: ', err.message);
+    
+  }
 };
 
 module.exports = { parseLibgenSearch, downloadEPUB, deleteEPUB };
