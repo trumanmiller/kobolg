@@ -98,7 +98,7 @@ const deleteEPUB = (md5) => {
     } catch (err) {
       console.error('ERROR deleting kepub: ', err.message);
     }
-  }, 120000);
+  }, 600000);
 };
 
 module.exports = { parseLibgenSearch, downloadEPUB, deleteEPUB };

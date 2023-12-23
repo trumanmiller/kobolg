@@ -78,29 +78,34 @@ app.get('/download', async (req, res, err) => {
   const md5 = req.query.md5;
   if (typeof md5 !== 'string' || md5.length !== 32) return next({});
   // console.log('Download:', md5);
-  try {
-    await downloadEPUB(md5);
-    // res.setHeader('Content-disposition', `attachment; filename=${md5}.kepub.epub`);
-    res.setHeader('Content-Disposition', 'attachment; filename=filename.epub"');
-    res.setHeader('Content-Type', 'application/epub');
+  if (!fs.existsSync(`./epub/${md5}.kepub.epub`)) {
+    try {
+      await downloadEPUB(md5);
+      // res.setHeader('Content-disposition', `attachment; filename=${md5}.kepub.epub`);
+      res.setHeader('Content-Disposition', 'attachment; filename=filename.epub"');
+      res.setHeader('Content-Type', 'application/epub');
 
-    execFile('./kepubify', ['-i', '-o', `./epub`, `./epub/${md5}.epub`], (error, stdout, stderr) => {
-      if (error) {
-        throw error;
-      } else {
-        // res.setHeader('Content-Disposition', 'attachment; filename=filename.epub"');
-        // res.setHeader('Content-Type', 'application/epub');
-        res.download(path.join(__dirname, `./epub/${md5}.kepub.epub`));
+      execFile('./kepubify', ['-i', '-o', `./epub`, `./epub/${md5}.epub`], (error, stdout, stderr) => {
+        if (error) {
+          throw error;
+        } else {
+          // res.setHeader('Content-Disposition', 'attachment; filename=filename.epub"');
+          // res.setHeader('Content-Type', 'application/epub');
+          res.download(path.join(__dirname, `./epub/${md5}.kepub.epub`));
 
-        deleteEPUB(md5);
-      }
-    });
-  } catch (err) {
-    console.error(`Error: ${err.message}`);
-    deleteEPUB(md5);
-    res.status(500).send('ERROR downloading book. you can try again but there may be an issue with download servers');
+          deleteEPUB(md5);
+        }
+      });
+    } catch (err) {
+      console.error(`Error: ${err.message}`);
+      deleteEPUB(md5);
+      res.status(500).send('ERROR downloading book. you can try again but there may be an issue with download servers');
+    }
+  } else {
+    console.log('serving book from cache');
+    res.download(path.join(__dirname, `./epub/${md5}.kepub.epub`));
   }
-  console.log('Book download and processing took: ', Date.now() - start);
+  console.log('Book download processing took: ', Date.now() - start);
 });
 
 app.all((req, res, next) => {
