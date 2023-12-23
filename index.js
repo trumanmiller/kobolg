@@ -91,9 +91,8 @@ app.get('/download', async (req, res, err) => {
         // res.setHeader('Content-Disposition', 'attachment; filename=filename.epub"');
         // res.setHeader('Content-Type', 'application/epub');
         res.download(path.join(__dirname, `./epub/${md5}.kepub.epub`));
-        setTimeout(() => {
-          deleteEPUB(md5);
-        }, 60000);
+
+        deleteEPUB(md5);
       }
     });
   } catch (err) {

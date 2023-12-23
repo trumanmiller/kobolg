@@ -79,22 +79,26 @@ const downloadEPUB = async (md5) => {
 };
 
 const deleteEPUB = (md5) => {
-  try {
-    fs.unlink(`./epub/${md5}.epub`, (err) => {
-      if (err) console.error('ERROR deleting epub: ', err.message);
-      console.log('epub removed');
-    });
-  } catch (err) {
-    console.error('ERROR deleting epub: ', err.message);
-  }
-  try {
-    fs.unlink(`./epub/${md5}.kepub.epub`, (err) => {
-      if (err) console.error('ERROR deleting kepub: ', err.message);
-      console.log('kepub removed');
-    });
-  } catch (err) {
-    console.error('ERROR deleting kepub: ', err.message);
-  }
+  setTimeout(() => {
+    try {
+      fs.unlink(`./epub/${md5}.epub`, (err) => {
+        if (err) console.error('ERROR deleting epub: ', err.message);
+        console.log('epub removed');
+      });
+    } catch (err) {
+      console.error('ERROR deleting epub: ', err.message);
+    }
+  }, 0);
+  setTimeout(() => {
+    try {
+      fs.unlink(`./epub/${md5}.kepub.epub`, (err) => {
+        if (err) console.error('ERROR deleting kepub: ', err.message);
+        console.log('kepub removed');
+      });
+    } catch (err) {
+      console.error('ERROR deleting kepub: ', err.message);
+    }
+  }, 120000);
 };
 
 module.exports = { parseLibgenSearch, downloadEPUB, deleteEPUB };
