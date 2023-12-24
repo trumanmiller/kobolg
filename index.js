@@ -76,26 +76,47 @@ app.get('/search', async (req, res, next) => {
 app.get('/download', async (req, res, err) => {
   const start = Date.now();
   const md5 = req.query.md5;
+
   if (typeof md5 !== 'string' || md5.length !== 32) return next({});
+
+  res.setHeader('Content-Disposition', 'attachment; filename=filename.epub"');
+  res.setHeader('Content-Type', 'application/epub');
+
   // console.log('Download:', md5);
   if (!fs.existsSync(`./epub/${md5}.kepub.epub`)) {
     try {
-      await downloadEPUB(md5);
+      if (!fs.existsSync(`./epub/${md5}.epub`)) {
+        await downloadEPUB(md5);
+
+        execFile('./kepubify', ['-i', '-o', `./epub`, `./epub/${md5}.epub`], (err, stdout, stderr) => {
+          if (err) {
+            console.error('ERROR running kepubify', err.message);
+          } else {
+            // res.setHeader('Content-Disposition', 'attachment; filename=filename.epub"');
+            // res.setHeader('Content-Type', 'application/epub');
+            res.download(path.join(__dirname, `./epub/${md5}.kepub.epub`));
+
+            deleteEPUB(md5);
+          }
+        });
+      } else {
+        const intervalHandle = setInterval(() => {
+          execFile('./kepubify', ['-i', '-o', `./epub`, `./epub/${md5}.epub`], (err, stdout, stderr) => {
+            if (err) {
+              // console.error('INVALID EPUB', err.message);
+            } else {
+              clearInterval(intervalHandle);
+              // res.setHeader('Content-Disposition', 'attachment; filename=filename.epub"');
+              // res.setHeader('Content-Type', 'application/epub');
+              res.download(path.join(__dirname, `./epub/${md5}.kepub.epub`));
+
+              deleteEPUB(md5);
+            }
+          });
+        }, 1000);
+      }
+
       // res.setHeader('Content-disposition', `attachment; filename=${md5}.kepub.epub`);
-      res.setHeader('Content-Disposition', 'attachment; filename=filename.epub"');
-      res.setHeader('Content-Type', 'application/epub');
-
-      execFile('./kepubify', ['-i', '-o', `./epub`, `./epub/${md5}.epub`], (error, stdout, stderr) => {
-        if (error) {
-          throw error;
-        } else {
-          // res.setHeader('Content-Disposition', 'attachment; filename=filename.epub"');
-          // res.setHeader('Content-Type', 'application/epub');
-          res.download(path.join(__dirname, `./epub/${md5}.kepub.epub`));
-
-          deleteEPUB(md5);
-        }
-      });
     } catch (err) {
       console.error(`Error: ${err.message}`);
       deleteEPUB(md5);
