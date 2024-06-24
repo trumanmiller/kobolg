@@ -16,7 +16,7 @@ app.get('/', (req, res, err) => {
 
 app.get('/search', async (req, res, next) => {
   const search = req.query.s;
-  if (typeof search !== 'string') return next({});
+  if (typeof search !== 'string') return next({}); 
   let html;
   let startingIndex;
   try {
@@ -28,7 +28,7 @@ app.get('/search', async (req, res, next) => {
   }
 
   if (search.length < 1) {
-    const modifiedHtml = html.slice(0, startingIndex) + '<div>Search to o short</div>' + html.slice(startingIndex);
+    const modifiedHtml = html.slice(0, startingIndex) + '<div>Search too short</div>' + html.slice(startingIndex);
     res.contentType('text/html');
     res.status(200).send(modifiedHtml);
     return;
@@ -50,7 +50,7 @@ app.get('/search', async (req, res, next) => {
           <td>${title}</td>
           <td>${fileSize}</td>
           <td>
-            <a href='/download?md5=${md5}'>GET</a>
+            <a href='/download?md5=${md5}' id="downloadButton">GET</a>
           </td>
         </tr>
         `;

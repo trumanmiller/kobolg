@@ -8,7 +8,7 @@
   <body>
     <form action="/search" method="get">
       <input minlength="1" type="text" name="s" id="searchBox" />
-      <input type="submit" value="Search" />
+      <input type="submit" value="Search" id="searchButton" />
     </form>
 
     <!-- <button id="searchButton">search</button> -->
@@ -23,7 +23,6 @@
           </tr>
         </thead>
         <tbody id="tableBody">
-          
           <!-- <tr>
             <td>Appleton, Victor</td>
             <td></td>
@@ -46,17 +45,24 @@
       /* justify-content: center; */
       align-items: center;
     }
-    input,
-    button {
+    input {
       max-width: 300px;
       padding: 10px;
       margin: 10px;
     }
+    #searchButton:active,
+    #searchButton:focus {
+      background-color: black;
+      color: white;
+    }
     td {
       border: 1px solid black;
     }
+    #downloadButton {
+      
+    }
   </style>
-  <script>
+  <!-- <script>
     const button = document.getElementById('searchButton');
     const searchBox = document.getElementById('searchBox');
     // const list = document.getElementById('list');
@@ -98,5 +104,5 @@
         });
       searchBox.value = '';
     });
-  </script>
+  </script> -->
 </html>
