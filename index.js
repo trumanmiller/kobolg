@@ -1,51 +1,63 @@
 // const libgen = require('libgenesis');
-const fs = require('fs');
-const fp = require('fs/promises');
-const https = require('https');
-const app = require('express')();
-const path = require('path');
-const { spawn, execFile } = require('child_process');
+const fs = require("fs");
+const fp = require("fs/promises");
+const https = require("https");
+const app = require("express")();
+const path = require("path");
+const { spawn, execFile } = require("child_process");
 
-const { parseLibgenSearch, downloadEPUB, deleteEPUB } = require('./helpers');
+const { parseLibgenSearch, downloadEPUB, deleteEPUB } = require("./helpers");
 
-const PORT = 3000;
+const PORT = 80;
 
-app.get('/', (req, res, err) => {
-  res.sendFile(path.join(__dirname, './index.html'));
+app.get("/", (req, res, err) => {
+  console.log("request on /");
+  res.sendFile(path.join(__dirname, "./index.html"));
 });
 
-app.get('/search', async (req, res, next) => {
+app.get("/search", async (req, res, next) => {
   const search = req.query.s;
-  if (typeof search !== 'string') return next({}); 
+  if (typeof search !== "string") return next({});
   let html;
   let startingIndex;
   try {
-    const file = await fp.readFile('./index.html');
+    const file = await fp.readFile("./index.html");
     html = file.toString();
     startingIndex = html.search('<tbody id="tableBody">') + 22;
   } catch (err) {
-    console.error('There was an issue reading template html from fs', err.message);
+    console.error(
+      "There was an issue reading template html from fs",
+      err.message
+    );
   }
 
   if (search.length < 1) {
-    const modifiedHtml = html.slice(0, startingIndex) + '<div>Search too short</div>' + html.slice(startingIndex);
-    res.contentType('text/html');
+    const modifiedHtml =
+      html.slice(0, startingIndex) +
+      "<div>Search too short</div>" +
+      html.slice(startingIndex);
+    res.contentType("text/html");
     res.status(200).send(modifiedHtml);
     return;
   }
 
-  console.log('Search:', search);
-  fetch(`https://libgen.is/fiction/?q=${search}&criteria=&language=&format=epub`)
+  console.log("Search:", search);
+  fetch(
+    `https://libgen.is/fiction/?q=${search}&criteria=&language=&format=epub`
+  )
     .then((response) => response.arrayBuffer())
     .then((buffer) => {
-      const libgenHTML = new TextDecoder('utf-8').decode(new Uint8Array(buffer));
+      const libgenHTML = new TextDecoder("utf-8").decode(
+        new Uint8Array(buffer)
+      );
       // console.log(parseLibgenSearch(html));
       const bookData = parseLibgenSearch(libgenHTML);
 
-      const bookNodes = bookData.map(({ authors, series, title, fileSize, md5 }) => {
-        return `
+      const bookNodes = bookData.map(
+        ({ authors, series, title, fileSize, md5 }) => {
+          return `
         <tr>
-          <td>${authors.join('; ')}</td>
+          <td>${authors.join("; ")}</td>
           <td>${series}</td>
           <td>${title}</td>
           <td>${fileSize}</td>
@@ -54,33 +66,39 @@ app.get('/search', async (req, res, next) => {
           </td>
         </tr>
         `;
-      });
+        }
+      );
       if (bookNodes.length < 1) {
         const modifiedHtml =
-          html.slice(0, startingIndex) + '<div>Your search returned no results</div>' + html.slice(startingIndex);
-        res.contentType('text/html');
+          html.slice(0, startingIndex) +
+          "<div>Your search returned no results</div>" +
+          html.slice(startingIndex);
+        res.contentType("text/html");
         res.status(200).send(modifiedHtml);
         return;
       }
 
-      const modifiedHtml = html.slice(0, startingIndex) + bookNodes.join('') + html.slice(startingIndex);
-      res.contentType('text/html');
+      const modifiedHtml =
+        html.slice(0, startingIndex) +
+        bookNodes.join("") +
+        html.slice(startingIndex);
+      res.contentType("text/html");
       res.status(200).send(modifiedHtml);
     })
     .catch((error) => {
-      console.error('Error:', error);
+      console.error("Error:", error);
       next(error);
     });
 });
 
-app.get('/download', async (req, res, err) => {
+app.get("/download", async (req, res, err) => {
   const start = Date.now();
   const md5 = req.query.md5;
 
-  if (typeof md5 !== 'string' || md5.length !== 32) return next({});
+  if (typeof md5 !== "string" || md5.length !== 32) return next({});
 
-  res.setHeader('Content-Disposition', 'attachment; filename=filename.epub"');
-  res.setHeader('Content-Type', 'application/epub');
+  res.setHeader("Content-Disposition", 'attachment; filename=filename.epub"');
+  res.setHeader("Content-Type", "application/epub");
 
   // console.log('Download:', md5);
   if (!fs.existsSync(`./epub/${md5}.kepub.epub`)) {
@@ -88,31 +106,39 @@ app.get('/download', async (req, res, err) => {
       if (!fs.existsSync(`./epub/${md5}.epub`)) {
         await downloadEPUB(md5);
 
-        execFile('./kepubify', ['-i', '-o', `./epub`, `./epub/${md5}.epub`], (err, stdout, stderr) => {
-          if (err) {
-            console.error('ERROR running kepubify', err.message);
-          } else {
-            // res.setHeader('Content-Disposition', 'attachment; filename=filename.epub"');
-            // res.setHeader('Content-Type', 'application/epub');
-            res.download(path.join(__dirname, `./epub/${md5}.kepub.epub`));
-
-            deleteEPUB(md5);
-          }
-        });
-      } else {
-        const intervalHandle = setInterval(() => {
-          execFile('./kepubify', ['-i', '-o', `./epub`, `./epub/${md5}.epub`], (err, stdout, stderr) => {
+        execFile(
+          "./kepubify",
+          ["-i", "-o", `./epub`, `./epub/${md5}.epub`],
+          (err, stdout, stderr) => {
             if (err) {
-              // console.error('INVALID EPUB', err.message);
+              console.error("ERROR running kepubify", err.message);
             } else {
-              clearInterval(intervalHandle);
               // res.setHeader('Content-Disposition', 'attachment; filename=filename.epub"');
               // res.setHeader('Content-Type', 'application/epub');
               res.download(path.join(__dirname, `./epub/${md5}.kepub.epub`));
 
               deleteEPUB(md5);
             }
-          });
+          }
+        );
+      } else {
+        const intervalHandle = setInterval(() => {
+          execFile(
+            "./kepubify",
+            ["-i", "-o", `./epub`, `./epub/${md5}.epub`],
+            (err, stdout, stderr) => {
+              if (err) {
+                // console.error('INVALID EPUB', err.message);
+              } else {
+                clearInterval(intervalHandle);
+                // res.setHeader('Content-Disposition', 'attachment; filename=filename.epub"');
+                // res.setHeader('Content-Type', 'application/epub');
+                res.download(path.join(__dirname, `./epub/${md5}.kepub.epub`));
+
+                deleteEPUB(md5);
+              }
+            }
+          );
         }, 1000);
       }
 
@@ -120,25 +146,30 @@ app.get('/download', async (req, res, err) => {
     } catch (err) {
       console.error(`Error: ${err.message}`);
       deleteEPUB(md5);
-      res.status(500).send('ERROR downloading book. you can try again but there may be an issue with download servers');
+      res
+        .status(500)
+        .send(
+          "ERROR downloading book. you can try again but there may be an issue with download servers"
+        );
     }
   } else {
-    console.log('serving book from cache');
+    console.log("serving book from cache");
     res.download(path.join(__dirname, `./epub/${md5}.kepub.epub`));
   }
-  console.log('Book download processing took: ', Date.now() - start);
+  console.log("Book download processing took: ", Date.now() - start);
 });
 
-app.all((req, res, next) => {
-  res.status(404).send('page not found');
+app.use((req, res, next) => {
+  console.log("404 request on endpoint", req.url);
+  res.status(404).send("page not found");
 });
 
 app.use((err, req, res, next) => {
-  res.status(500).send('Internal Server Error');
+  res.status(500).send("Internal Server Error");
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log('listening on port: ' + PORT);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log("listening on port: " + PORT);
 });
 
 // const parsedData = parseHTML(html);
