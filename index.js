@@ -113,7 +113,6 @@ app.get("/download", async (req, res, err) => {
     try {
       if (!fs.existsSync(`./epub/${md5}.epub`)) {
         try {
-          throw new Error("test error");
           await downloadEPUBbooksdl(md5);
         } catch (err) {
           console.log("falling back to booksms because of error", err.message);
