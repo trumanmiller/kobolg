@@ -6,7 +6,12 @@ const app = require("express")();
 const path = require("path");
 const { spawn, execFile } = require("child_process");
 
-const { parseLibgenSearch, downloadEPUB, deleteEPUB } = require("./helpers");
+const {
+  parseLibgenSearch,
+  downloadEPUBbooksdl,
+  deleteEPUB,
+  downloadEPUBbookms,
+} = require("./helpers");
 
 const PORT = 80;
 
@@ -45,7 +50,10 @@ app.get("/search", async (req, res, next) => {
   fetch(
     `https://libgen.is/fiction/?q=${search}&criteria=&language=&format=epub`
   )
-    .then((response) => response.arrayBuffer())
+    .then((response) => {
+      console.log("libgen.is returned status", response.status, "for search");
+      return response.arrayBuffer();
+    })
     .then((buffer) => {
       const libgenHTML = new TextDecoder("utf-8").decode(
         new Uint8Array(buffer)
@@ -94,7 +102,7 @@ app.get("/search", async (req, res, next) => {
 app.get("/download", async (req, res, err) => {
   const start = Date.now();
   const md5 = req.query.md5;
-  console.log("download request from:", req.ip)
+  console.log("download request from:", req.ip);
   if (typeof md5 !== "string" || md5.length !== 32) return next({});
 
   res.setHeader("Content-Disposition", 'attachment; filename=filename.epub"');
@@ -104,7 +112,13 @@ app.get("/download", async (req, res, err) => {
   if (!fs.existsSync(`./epub/${md5}.kepub.epub`)) {
     try {
       if (!fs.existsSync(`./epub/${md5}.epub`)) {
-        await downloadEPUB(md5);
+        try {
+          throw new Error("test error");
+          await downloadEPUBbooksdl(md5);
+        } catch (err) {
+          console.log("falling back to booksms because of error", err.message);
+          await downloadEPUBbookms(md5);
+        }
 
         execFile(
           "./kepubify",
