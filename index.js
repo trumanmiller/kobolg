@@ -16,7 +16,7 @@ const {
 const PORT = 80;
 
 app.get("/", (req, res, err) => {
-  console.log("request on /", "from", req.ip);
+  console.log("request on /", "from", req.headers["x-forwarded-for"] || req.ip);
   res.sendFile(path.join(__dirname, "./index.html"));
 });
 
@@ -102,7 +102,10 @@ app.get("/search", async (req, res, next) => {
 app.get("/download", async (req, res, err) => {
   const start = Date.now();
   const md5 = req.query.md5;
-  console.log("download request from:", req.ip);
+  console.log(
+    "download request from:",
+    req.headers["x-forwarded-for"] || req.ip
+  );
   if (typeof md5 !== "string" || md5.length !== 32) return next({});
 
   res.setHeader("Content-Disposition", 'attachment; filename=filename.epub"');
@@ -173,7 +176,12 @@ app.get("/download", async (req, res, err) => {
 });
 
 app.use((req, res, next) => {
-  console.log("404 request on endpoint", req.url, "from ip:", req.ip);
+  console.log(
+    "404 request on endpoint",
+    req.url,
+    "from ip:",
+    req.headers["x-forwarded-for"] || req.ip
+  );
   res.status(404).send("page not found");
 });
 
