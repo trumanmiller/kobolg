@@ -46,7 +46,7 @@ const parseLibgenSearch = (html) => {
 const downloadEPUB = async (md5) => {
   console.log('Downloading:', md5);
 
-  const url = `https://cdn3.booksdl.org/get.php?md5=${md5}`;
+  const url = `https://cdn3.booksdl.lc/get.php?md5=${md5}&key=W9A21PN7BW3JRHPA`;
   const localDirectory = './epub';
   const fileName = `${md5}.epub`;
   const localPath = path.join(localDirectory, fileName);

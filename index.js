@@ -11,7 +11,7 @@ const { parseLibgenSearch, downloadEPUB, deleteEPUB } = require("./helpers");
 const PORT = 80;
 
 app.get("/", (req, res, err) => {
-  console.log("request on /");
+  console.log("request on /", "from", req.ip);
   res.sendFile(path.join(__dirname, "./index.html"));
 });
 
@@ -94,7 +94,7 @@ app.get("/search", async (req, res, next) => {
 app.get("/download", async (req, res, err) => {
   const start = Date.now();
   const md5 = req.query.md5;
-
+  console.log("download request from:", req.ip)
   if (typeof md5 !== "string" || md5.length !== 32) return next({});
 
   res.setHeader("Content-Disposition", 'attachment; filename=filename.epub"');
@@ -153,14 +153,14 @@ app.get("/download", async (req, res, err) => {
         );
     }
   } else {
-    console.log("serving book from cache");
+    console.log("serving book from cache to:");
     res.download(path.join(__dirname, `./epub/${md5}.kepub.epub`));
   }
   console.log("Book download processing took: ", Date.now() - start);
 });
 
 app.use((req, res, next) => {
-  console.log("404 request on endpoint", req.url);
+  console.log("404 request on endpoint", req.url, "from ip:", req.ip);
   res.status(404).send("page not found");
 });
 
